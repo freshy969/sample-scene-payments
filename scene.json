@@ -1,0 +1,27 @@
+{
+  "display": {
+    "title": "dcl-payments"
+  },
+  "owner": "",
+  "contact": {
+    "name": "Michal",
+    "email": "michal@decentraland.org"
+  },
+  "scene": {
+    "parcels": [
+      "44,77"
+    ],
+    "base": "44,77"
+  },
+  "communications": {
+    "type": "webrtc",
+    "signalling": "https://rendezvous.decentraland.org"
+  },
+  "policy": {
+    "fly": true,
+    "voiceEnabled": true,
+    "blacklist": [],
+    "teleportPosition": "0,0,0"
+  },
+  "main": "scene.js"
+}
