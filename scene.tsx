@@ -1,89 +1,82 @@
-import {
-	inject,
-	EntityController,
-	EthereumController,
-	createElement,
-	Script
-} from "metaverse-api";
-import { EventSubscriber } from "metaverse-rpc";
+import { createElement, ScriptableScene, EthereumController, inject } from "metaverse-api";
 
-const receivingAddress = "0x9dbc8ae2586267126e5067c9958720245d8cc53f";
-const amount = 10;
-const currency = "MANA";
+const receivingAddress = "0x9dbc8ae2586267126e5067c9958720245d8cc53f"
+const amount = 10
+const currency = "MANA"
+const TX_STATUS_ID = "tx-status"
+const DOOR_ID = "door"
 
-export default class FlyingSpheres extends Script {
-	@inject("EntityController") entityController: EntityController | null = null;
+export interface  IPaymentState {
+	userPaid:boolean; 
+	isDoorClosed:boolean; 
+	tx:string|null; 
+	error:boolean
+}
+
+export default class FlyingSpheres extends ScriptableScene<{},IPaymentState> {	
+
 	@inject("experimentalEthereumController")
 	eth: EthereumController | null = null;
 
-	eventSubscriber: EventSubscriber | null = null;
-	userPaid: boolean = false;
-	isDoorClosed: boolean = true;
-	tx: string | null = null;
+	state:IPaymentState = {
+		error: false,
+		userPaid: false,
+		isDoorClosed: true,
+		tx: null
+	};
 
-	async systemDidEnable() {
-		this.eventSubscriber = new EventSubscriber(this.entityController!);
-
-		this.eventSubscriber.on("door_click", async () => {
-			if (this.userPaid) {
-				this.isDoorClosed = !this.isDoorClosed;
-				await this.entityController!.setEntityAttributes("door_handle", {
-					rotation: {
-						x: 0,
-						y: this.isDoorClosed ? 270 : 0,
-						z: 0
-					}
-				});
-				return;
-			}
-
-			// Exit if user already initiated payment
-			if (this.tx) {
-				return;
-			}
-
-			try {
-				const tx = await this.eth!.requirePayment(
-					receivingAddress,
-					amount,
-					currency
-				);
-				this.tx = tx;
-
-				await this.entityController!.setEntityAttributes("tx-status", {
-					visible: true
-				});
-
-				this.userPaid = await this.eth!.waitForMinedTx(
-					currency,
-					tx,
-					receivingAddress
-				);
-
-				if (this.userPaid) {
-					await this.entityController!.setEntityAttributes("tx-status", {
-						color: "green",
-						value: "Enter!",
-						fontSize: 50
-					});
-					await this.entityController!.setEntityAttributes("door", {
-						disabled: false
-					});
+	async sceneDidMount() {		
+		this.eventSubscriber.on(`${DOOR_ID}_click`, async () => {
+			if (this.state.userPaid) {
+				const newState = {
+					isDoorClosed: !this.state.isDoorClosed
 				}
-			} catch (e) {
-				await this.entityController!.setEntityAttributes("tx-status", {
-					visible: true,
-					value: "Failed to sign MetaMask transaction",
-					fontSize: 40
-				});
+				this,this.setState(newState)
+			} else {
+				if (this.state.tx) { // Exit if user already initiated payment
+					return;
+				}
+				this.handlePayment()
 			}
 		});
+	}
 
-		await this.render();
+	async handlePayment() {
+		try {
+			this.setState({error: false});
+			const tx = await this.eth!.requirePayment(
+				receivingAddress,
+				amount,
+				currency
+			);
+
+			this.setState({tx: tx})
+			
+			const userPaid = await this.eth!.waitForMinedTx(
+				currency,
+				tx,
+				receivingAddress
+			);			
+			if (userPaid) {
+				this.setState({userPaid: true, tx: null});				
+			}
+		} catch (e) {
+			console.log(`error trying to pay to ${receivingAddress} ${amount}${currency}`,e);
+			this.setState({error: true, tx: null});
+		}
 	}
 
 	async render() {
-		await this.entityController!.render(
+		const { userPaid, error, tx, isDoorClosed } = this.state
+		
+		const doorRotation = { x: 0, y: isDoorClosed ? 180 : 90 , z: 0 }
+
+		const statusVisible = userPaid || tx !== null
+		const statusFontSize = userPaid? 50 : 40
+		const statusColor = userPaid? "green" : "red"
+		const statusMessage = userPaid? "Enter!" : error ? "Failed to sign MetaMask transaction" : "Waiting for transaction..."
+
+		return (
 			<scene position={{ x: 5, y: 0, z: 5 }}>
 				<material
 					id="wall"
@@ -106,23 +99,23 @@ export default class FlyingSpheres extends Script {
 
 				<entity
 					id="door_handle"
-					rotation={{ x: 0, y: 0, z: 0 }}
+					rotation={doorRotation}
 					transition={{ rotation: { duration: 1000, timing: "ease-in" } }}
 				>
 					<box
-						id="door"
+						id={DOOR_ID}
 						scale={{ x: 1, y: 3, z: 0.05 }}
 						position={{ x: -0.5, y: 1.5, z: 0 }}
 						material="#door"
 					/>
 				</entity>
 				<text
-					id="tx-status"
+					id={TX_STATUS_ID}
 					position={{ x: 2, y: 2, z: -0.1 }}
-					color="red"
-					value="Waiting for transaction..."
-					visible={false}
-					fontSize={40}
+					color={statusColor}
+					value={statusMessage}
+					visible={statusVisible}
+					fontSize={statusFontSize}
 					hAlign="center"
 				/>
 

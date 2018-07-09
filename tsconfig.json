@@ -16,14 +16,19 @@
     "allowUnusedLabels": false,
     "newLine": "LF",
     "stripInternal": true,
-    "baseUrl": ".",
     "strict": true,
     "jsx": "react",
     "jsxFactory": "createElement",
     "removeComments": true,
-    "outDir": ".",
+    "outDir": "dist",
+    "baseUrl": ".",
     "pretty": true,
-    "lib": ["es2017", "dom"]
+    "lib": ["es2017", "dom"],
+    "plugins": [
+      {
+        "name": "tslint-language-service"
+      }
+    ]
   },
   "exclude": ["node_modules"]
 }
