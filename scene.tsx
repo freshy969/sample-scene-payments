@@ -13,7 +13,7 @@ export interface  IPaymentState {
 	error:boolean
 }
 
-export default class FlyingSpheres extends ScriptableScene<{},IPaymentState> {	
+export default class GenericPayment extends ScriptableScene<{},IPaymentState> {	
 
 	@inject("experimentalEthereumController")
 	eth: EthereumController | null = null;
