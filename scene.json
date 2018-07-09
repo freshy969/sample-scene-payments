@@ -1,17 +1,17 @@
 {
   "display": {
-    "title": "dcl-payments"
+    "title": "generic-payment"
   },
-  "owner": "",
+  "owner": "decentraland",
   "contact": {
-    "name": "Michal",
-    "email": "michal@decentraland.org"
+    "name": "decentraland",
+    "email": "info@decentraland.org"
   },
   "scene": {
     "parcels": [
-      "44,77"
+      "0,0"
     ],
-    "base": "44,77"
+    "base": "0,0"
   },
   "communications": {
     "type": "webrtc",
@@ -23,5 +23,5 @@
     "blacklist": [],
     "teleportPosition": "0,0,0"
   },
-  "main": "scene.js"
+  "main": "dist/scene.js"
 }
